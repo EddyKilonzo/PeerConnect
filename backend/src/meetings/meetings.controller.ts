@@ -19,6 +19,10 @@ import {
   ApiParam,
   ApiBody,
   ApiQuery,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
+  ApiBadRequestResponse,
+  ApiNotFoundResponse,
 } from '@nestjs/swagger';
 import { MeetingsService } from './meetings.service';
 import {
@@ -43,11 +47,11 @@ interface AuthenticatedRequest extends ExpressRequest {
   };
 }
 
-@ApiTags('meetings')
+@ApiTags('Meetings')
 @Controller('meetings')
 @UseGuards(JwtAuthGuard, RoleBasedGuard)
 @ANY_AUTHENTICATED()
-@ApiBearerAuth()
+@ApiBearerAuth('JWT-auth')
 export class MeetingsController {
   private readonly logger = new Logger(MeetingsController.name);
 
@@ -56,7 +60,9 @@ export class MeetingsController {
   @Post()
   @Roles('LISTENER', 'ADMIN')
   @ApiOperation({
-    summary: 'Create a new meeting in a group (Listeners and Admins only)',
+    summary: 'Create a new meeting in a group',
+    description:
+      'Create a new meeting in a group. Available to LISTENER and ADMIN roles only.',
   })
   @ApiResponse({
     status: 201,
@@ -64,6 +70,15 @@ export class MeetingsController {
     type: MeetingDto,
   })
   @ApiBody({ type: CreateMeetingDto })
+  @ApiUnauthorizedResponse({
+    description: 'User not authenticated',
+  })
+  @ApiForbiddenResponse({
+    description: 'Access denied - LISTENER or ADMIN role required',
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input data',
+  })
   async createMeeting(
     @Request() req: AuthenticatedRequest,
     @Body() dto: CreateMeetingDto,
@@ -78,7 +93,9 @@ export class MeetingsController {
   @Post(':id/start')
   @Roles('LISTENER', 'ADMIN')
   @ApiOperation({
-    summary: 'Start a scheduled meeting (Listeners and Admins only)',
+    summary: 'Start a scheduled meeting',
+    description:
+      'Start a scheduled meeting. Available to LISTENER and ADMIN roles only.',
   })
   @ApiResponse({
     status: 200,
@@ -86,6 +103,15 @@ export class MeetingsController {
     type: MeetingDto,
   })
   @ApiParam({ name: 'id', description: 'Meeting ID' })
+  @ApiUnauthorizedResponse({
+    description: 'User not authenticated',
+  })
+  @ApiForbiddenResponse({
+    description: 'Access denied - LISTENER or ADMIN role required',
+  })
+  @ApiNotFoundResponse({
+    description: 'Meeting not found',
+  })
   async startMeeting(
     @Request() req: AuthenticatedRequest,
     @Param('id') meetingId: string,

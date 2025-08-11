@@ -56,7 +56,7 @@ export class AiService {
       const prompt = this.buildSessionSummaryPrompt(messages);
 
       const completion = await this.openai.chat.completions.create({
-        model: 'gpt-4',
+        model: 'gpt-5',
         messages: [
           {
             role: 'system',

@@ -20,6 +20,7 @@ import {
   ApiQuery,
   ApiBody,
   ApiParam,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import {
   ListenersService,
@@ -44,11 +45,11 @@ interface AuthenticatedRequest extends ExpressRequest {
   };
 }
 
-@ApiTags('listeners')
+@ApiTags('Listeners')
 @Controller('listeners')
 @UseGuards(JwtAuthGuard, RoleBasedGuard)
 @LISTENER_OR_USER()
-@ApiBearerAuth()
+@ApiBearerAuth('JWT-auth')
 export class ListenersController {
   private readonly logger = new Logger(ListenersController.name);
 
@@ -56,7 +57,9 @@ export class ListenersController {
 
   @Get('matches')
   @ApiOperation({
-    summary: 'Find listeners based on topic overlap with current user',
+    summary: 'Find listeners based on topic overlap',
+    description:
+      'Find listeners based on topic overlap with current user. Available to all authenticated users (USER, LISTENER, ADMIN).',
   })
   @ApiResponse({
     status: 200,
@@ -68,6 +71,9 @@ export class ListenersController {
     required: false,
     type: Number,
     description: 'Maximum number of listeners to return (default: 10)',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'User not authenticated',
   })
   async findListenersByTopicOverlap(
     @Request() req: AuthenticatedRequest,
@@ -87,7 +93,9 @@ export class ListenersController {
 
   @Get('recommendations')
   @ApiOperation({
-    summary: 'Get personalized listener recommendations for current user',
+    summary: 'Get personalized listener recommendations',
+    description:
+      'Get personalized listener recommendations for current user. Available to all authenticated users (USER, LISTENER, ADMIN).',
   })
   @ApiResponse({
     status: 200,
@@ -98,14 +106,17 @@ export class ListenersController {
     name: 'limit',
     required: false,
     type: Number,
-    description: 'Maximum number of recommendations to return (default: 5)',
+    description: 'Maximum number of recommendations to return (default: 10)',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'User not authenticated',
   })
   async getListenerRecommendations(
     @Request() req: AuthenticatedRequest,
     @Query('limit') limit?: number,
   ): Promise<ListenerRecommendationDto[]> {
     const userId = req.user.sub;
-    const limitValue = limit ? Math.min(Math.max(limit, 1), 20) : 5; // Ensure limit is between 1-20
+    const limitValue = limit ? Math.min(Math.max(limit, 1), 50) : 10;
 
     this.logger.log(
       `Getting listener recommendations for user ${userId} with limit ${limitValue}`,

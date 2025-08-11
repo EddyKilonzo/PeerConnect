@@ -19,6 +19,10 @@ import {
   ApiParam,
   ApiQuery,
   ApiBody,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
+  ApiBadRequestResponse,
+  ApiNotFoundResponse,
 } from '@nestjs/swagger';
 import {
   ResourcesService,
@@ -30,10 +34,10 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '../auth/guards/roles.guard';
 
-@ApiTags('resources')
+@ApiTags('Resources')
 @Controller('resources')
 @UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
+@ApiBearerAuth('JWT-auth')
 export class ResourcesController {
   private readonly logger = new Logger(ResourcesController.name);
 
@@ -43,7 +47,9 @@ export class ResourcesController {
   @UseGuards(RolesGuard)
   @Roles('LISTENER', 'ADMIN')
   @ApiOperation({
-    summary: 'Upload a new resource (Listeners and Admins only)',
+    summary: 'Upload a new resource',
+    description:
+      'Upload a new resource. Available to LISTENER and ADMIN roles only.',
   })
   @ApiResponse({
     status: 201,
@@ -51,6 +57,15 @@ export class ResourcesController {
     type: ResourceDto,
   })
   @ApiBody({ type: CreateResourceDto })
+  @ApiUnauthorizedResponse({
+    description: 'User not authenticated',
+  })
+  @ApiForbiddenResponse({
+    description: 'Access denied - LISTENER or ADMIN role required',
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input data',
+  })
   async uploadResource(
     @Request() req,
     @Body() dto: CreateResourceDto,
@@ -61,7 +76,11 @@ export class ResourcesController {
   }
 
   @Put(':id')
-  @ApiOperation({ summary: 'Update resource details' })
+  @ApiOperation({
+    summary: 'Update resource details',
+    description:
+      'Update resource details. Available to all authenticated users (USER, LISTENER, ADMIN).',
+  })
   @ApiResponse({
     status: 200,
     description: 'Resource updated successfully',
@@ -69,6 +88,15 @@ export class ResourcesController {
   })
   @ApiParam({ name: 'id', description: 'Resource ID' })
   @ApiBody({ type: UpdateResourceDto })
+  @ApiUnauthorizedResponse({
+    description: 'User not authenticated',
+  })
+  @ApiNotFoundResponse({
+    description: 'Resource not found',
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input data',
+  })
   async updateResource(
     @Request() req,
     @Param('id') resourceId: string,
@@ -82,7 +110,10 @@ export class ResourcesController {
   @Post(':id/approve')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
-  @ApiOperation({ summary: 'Approve or reject a resource (Admin only)' })
+  @ApiOperation({
+    summary: 'Approve or reject a resource',
+    description: 'Approve or reject a resource. Available to ADMIN role only.',
+  })
   @ApiResponse({
     status: 200,
     description: 'Resource approval status updated successfully',
@@ -90,6 +121,15 @@ export class ResourcesController {
   })
   @ApiParam({ name: 'id', description: 'Resource ID' })
   @ApiBody({ type: ResourceApprovalDto })
+  @ApiUnauthorizedResponse({
+    description: 'User not authenticated',
+  })
+  @ApiForbiddenResponse({
+    description: 'Access denied - ADMIN role required',
+  })
+  @ApiNotFoundResponse({
+    description: 'Resource not found',
+  })
   async approveResource(
     @Request() req,
     @Param('id') resourceId: string,

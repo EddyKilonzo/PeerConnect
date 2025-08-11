@@ -14,6 +14,8 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiBody,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 import { AiService, SessionSummaryData, GroupSummaryData } from './ai.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -30,10 +32,10 @@ export class GenerateGroupSummaryDto {
   messages: string[];
 }
 
-@ApiTags('ai')
+@ApiTags('AI')
 @Controller('ai')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@ApiBearerAuth()
+@ApiBearerAuth('JWT-auth')
 export class AiController {
   private readonly logger = new Logger(AiController.name);
 
@@ -43,7 +45,8 @@ export class AiController {
   @Roles(Role.LISTENER, Role.ADMIN)
   @ApiOperation({
     summary: 'Generate AI summary for a session',
-    description: 'Generate an AI-powered summary of a counseling session',
+    description:
+      'Generate an AI-powered summary of a counseling session. Available to LISTENER and ADMIN roles only.',
   })
   @ApiResponse({
     status: 201,
@@ -55,6 +58,12 @@ export class AiController {
     description: 'Invalid input data',
   })
   @ApiBody({ type: GenerateSessionSummaryDto })
+  @ApiUnauthorizedResponse({
+    description: 'User not authenticated',
+  })
+  @ApiForbiddenResponse({
+    description: 'Access denied - LISTENER or ADMIN role required',
+  })
   async generateSessionSummary(
     @Body() dto: GenerateSessionSummaryDto,
     @Request() req: ExpressRequest & { user: { sub: string } },
@@ -91,7 +100,8 @@ export class AiController {
   @Roles(Role.LISTENER, Role.ADMIN)
   @ApiOperation({
     summary: 'Generate AI summary for a group discussion',
-    description: 'Generate an AI-powered summary of a group discussion',
+    description:
+      'Generate an AI-powered summary of a group discussion. Available to LISTENER and ADMIN roles only.',
   })
   @ApiResponse({
     status: 201,
@@ -103,6 +113,12 @@ export class AiController {
     description: 'Invalid input data',
   })
   @ApiBody({ type: GenerateGroupSummaryDto })
+  @ApiUnauthorizedResponse({
+    description: 'User not authenticated',
+  })
+  @ApiForbiddenResponse({
+    description: 'Access denied - LISTENER or ADMIN role required',
+  })
   async generateGroupSummary(
     @Body() dto: GenerateGroupSummaryDto,
     @Request() req: ExpressRequest & { user: { sub: string } },

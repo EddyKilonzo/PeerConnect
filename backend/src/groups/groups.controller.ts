@@ -19,6 +19,9 @@ import {
   ApiParam,
   ApiBody,
   ApiQuery,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
 } from '@nestjs/swagger';
 import { GroupsService } from './groups.service';
 import type { CreateGroupDto } from './dto/create-group.dto';
@@ -39,11 +42,11 @@ interface AuthenticatedRequest extends ExpressRequest {
   };
 }
 
-@ApiTags('groups')
+@ApiTags('Groups')
 @Controller('groups')
 @UseGuards(JwtAuthGuard, RoleBasedGuard)
 @ANY_AUTHENTICATED()
-@ApiBearerAuth()
+@ApiBearerAuth('JWT-auth')
 export class GroupsController {
   private readonly logger = new Logger(GroupsController.name);
 
@@ -52,7 +55,9 @@ export class GroupsController {
   @Post()
   @Roles('LISTENER', 'ADMIN')
   @ApiOperation({
-    summary: 'Create a new peer group (Listeners and Admins only)',
+    summary: 'Create a new peer group',
+    description:
+      'Create a new peer group. Available to LISTENER and ADMIN roles only.',
   })
   @ApiResponse({
     status: 201,
@@ -62,17 +67,38 @@ export class GroupsController {
     schema: {
       type: 'object',
       properties: {
-        name: { type: 'string' },
-        description: { type: 'string' },
-        topicId: { type: 'string' },
-        isPrivate: { type: 'boolean' },
-        isLocked: { type: 'boolean' },
-        maxMembers: { type: 'number' },
-        rules: { type: 'array', items: { type: 'string' } },
-        tags: { type: 'array', items: { type: 'string' } },
-        allowAnonymous: { type: 'boolean' },
+        name: { type: 'string', description: 'Group name' },
+        description: { type: 'string', description: 'Group description' },
+        topicId: { type: 'string', description: 'Associated topic ID' },
+        isPrivate: { type: 'boolean', description: 'Whether group is private' },
+        isLocked: { type: 'boolean', description: 'Whether group is locked' },
+        maxMembers: {
+          type: 'number',
+          description: 'Maximum number of members',
+        },
+        rules: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Group rules',
+        },
+        tags: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Group tags',
+        },
+        allowAnonymous: {
+          type: 'boolean',
+          description: 'Whether to allow anonymous users',
+        },
       },
+      required: ['name', 'topicId'],
     },
+  })
+  @ApiUnauthorizedResponse({
+    description: 'User not authenticated',
+  })
+  @ApiForbiddenResponse({
+    description: 'Access denied - LISTENER or ADMIN role required',
   })
   async createGroup(
     @Request() req: AuthenticatedRequest,
@@ -84,12 +110,22 @@ export class GroupsController {
   }
 
   @Post(':id/join')
-  @ApiOperation({ summary: 'Join a peer group' })
+  @ApiOperation({
+    summary: 'Join a peer group',
+    description:
+      'Join an existing peer group. Available to all authenticated users (USER, LISTENER, ADMIN).',
+  })
   @ApiResponse({
     status: 200,
     description: 'Successfully joined group',
   })
   @ApiParam({ name: 'id', description: 'Group ID' })
+  @ApiUnauthorizedResponse({
+    description: 'User not authenticated',
+  })
+  @ApiNotFoundResponse({
+    description: 'Group not found',
+  })
   async joinGroup(
     @Request() req: AuthenticatedRequest,
     @Param('id') groupId: string,
@@ -100,14 +136,30 @@ export class GroupsController {
   }
 
   @Post(':id/messages')
-  @ApiOperation({ summary: 'Send a message in a group' })
+  @ApiOperation({
+    summary: 'Send a message in a group',
+    description:
+      'Send a message in a group. Available to all authenticated users (USER, LISTENER, ADMIN).',
+  })
   @ApiResponse({
     status: 201,
     description: 'Message sent successfully',
   })
   @ApiParam({ name: 'id', description: 'Group ID' })
   @ApiBody({
-    schema: { type: 'object', properties: { content: { type: 'string' } } },
+    schema: {
+      type: 'object',
+      properties: {
+        content: { type: 'string', description: 'Message content' },
+      },
+      required: ['content'],
+    },
+  })
+  @ApiUnauthorizedResponse({
+    description: 'User not authenticated',
+  })
+  @ApiNotFoundResponse({
+    description: 'Group not found',
   })
   async sendMessage(
     @Request() req: AuthenticatedRequest,
@@ -120,14 +172,34 @@ export class GroupsController {
   }
 
   @Get(':id/messages')
-  @ApiOperation({ summary: 'Get group messages' })
+  @ApiOperation({
+    summary: 'Get group messages',
+    description:
+      'Retrieve messages from a group. Available to all authenticated users (USER, LISTENER, ADMIN).',
+  })
   @ApiResponse({
     status: 200,
     description: 'Group messages retrieved successfully',
   })
   @ApiParam({ name: 'id', description: 'Group ID' })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 50)',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'User not authenticated',
+  })
+  @ApiNotFoundResponse({
+    description: 'Group not found',
+  })
   async getGroupMessages(
     @Param('id') groupId: string,
     @Query('page') page: number = 1,
@@ -137,23 +209,43 @@ export class GroupsController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get group details' })
+  @ApiOperation({
+    summary: 'Get group details',
+    description:
+      'Retrieve group details. Available to all authenticated users (USER, LISTENER, ADMIN).',
+  })
   @ApiResponse({
     status: 200,
     description: 'Group details retrieved successfully',
   })
   @ApiParam({ name: 'id', description: 'Group ID' })
+  @ApiUnauthorizedResponse({
+    description: 'User not authenticated',
+  })
+  @ApiNotFoundResponse({
+    description: 'Group not found',
+  })
   async getGroupDetails(@Param('id') groupId: string) {
     return this.groupsService.getGroup(groupId);
   }
 
   @Get(':id/can-send-message')
-  @ApiOperation({ summary: 'Check if user can send messages in group' })
+  @ApiOperation({
+    summary: 'Check if user can send messages in group',
+    description:
+      'Check if the authenticated user can send messages in a group. Available to all authenticated users (USER, LISTENER, ADMIN).',
+  })
   @ApiResponse({
     status: 200,
     description: 'Permission check result',
   })
   @ApiParam({ name: 'id', description: 'Group ID' })
+  @ApiUnauthorizedResponse({
+    description: 'User not authenticated',
+  })
+  @ApiNotFoundResponse({
+    description: 'Group not found',
+  })
   async canSendMessage(
     @Request() req: AuthenticatedRequest,
     @Param('id') groupId: string,
@@ -165,7 +257,11 @@ export class GroupsController {
 
   @Post(':id/listener-response')
   @Roles('LISTENER', 'ADMIN')
-  @ApiOperation({ summary: 'Create a listener response to flagged content' })
+  @ApiOperation({
+    summary: 'Create a listener response to flagged content',
+    description:
+      'Create a listener response to flagged content. Available to LISTENER and ADMIN roles only.',
+  })
   @ApiResponse({
     status: 201,
     description: 'Listener response created successfully',
@@ -207,6 +303,15 @@ export class GroupsController {
         'followUpRequired',
       ],
     },
+  })
+  @ApiUnauthorizedResponse({
+    description: 'User not authenticated',
+  })
+  @ApiForbiddenResponse({
+    description: 'Access denied - LISTENER or ADMIN role required',
+  })
+  @ApiNotFoundResponse({
+    description: 'Group not found',
   })
   async createListenerResponse(
     @Request() req: AuthenticatedRequest,

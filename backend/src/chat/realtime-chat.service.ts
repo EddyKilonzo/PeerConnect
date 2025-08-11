@@ -3,11 +3,92 @@ import { ChatGateway } from './chat.gateway';
 import { PrismaService } from '../prisma/prisma.service';
 import { ChatRoomType, MessageType } from './dto/chat-message.dto';
 
+// Proper TypeScript interfaces instead of 'any'
 interface MeetingWithGroup {
   id: string;
   title: string;
   groupId: string;
-  group: any;
+  group: {
+    id: string;
+    name: string;
+    description?: string;
+  };
+}
+
+interface MeetingData {
+  id: string;
+  title: string;
+  description: string;
+  groupId: string;
+  scheduledStartTime: Date;
+  scheduledEndTime?: Date;
+  status: string;
+}
+
+interface ResourceData {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  fileUrl: string;
+  topicId: string;
+  uploadedById: string;
+}
+
+interface NewGroupMember {
+  user: {
+    firstName: string;
+    lastName: string;
+  };
+}
+
+// Extend BroadcastData to ensure compatibility with ChatGateway
+interface SystemMessageData {
+  [key: string]: unknown;
+  id: string;
+  content: string;
+  messageType: MessageType;
+  roomId: string;
+  roomType: ChatRoomType;
+  createdAt: Date;
+  timestamp: Date;
+}
+
+interface NotificationData {
+  [key: string]: unknown;
+  groupId?: string;
+  meetingId?: string;
+  meeting?: MeetingData;
+  newMember?: NewGroupMember;
+  resource?: ResourceData;
+  topicId?: string;
+  timestamp: Date;
+}
+
+interface TypingIndicatorData {
+  [key: string]: unknown;
+  userId: string;
+  userName: string;
+  roomId: string;
+  roomType: ChatRoomType;
+  timestamp: Date;
+}
+
+interface ReadReceiptData {
+  [key: string]: unknown;
+  userId: string;
+  messageId: string;
+  roomId: string;
+  roomType: ChatRoomType;
+  timestamp: Date;
+}
+
+interface RoomStats {
+  roomId: string;
+  roomType: ChatRoomType;
+  messageCount: number;
+  onlineUsersCount: number;
+  timestamp: Date;
 }
 
 @Injectable()
@@ -26,20 +107,19 @@ export class RealtimeChatService {
     roomId: string,
     roomType: ChatRoomType,
     content: string,
-  ) {
+  ): Promise<SystemMessageData> {
     try {
       const message = await this.prisma.message.create({
         data: {
           senderId: 'system',
           receiverId: 'system',
           content,
-          messageType: MessageType.TEXT, // Changed from SYSTEM to TEXT since SYSTEM is not in Prisma enum
+          messageType: MessageType.TEXT,
           ...this.getRoomReference(roomId, roomType),
         },
       });
 
-      // Broadcast to all users in the room
-      this.chatGateway.broadcastToRoom(roomId, roomType, 'systemMessage', {
+      const systemMessageData: SystemMessageData = {
         id: message.id,
         content: message.content,
         messageType: MessageType.TEXT,
@@ -47,12 +127,20 @@ export class RealtimeChatService {
         roomType,
         createdAt: message.createdAt,
         timestamp: new Date(),
-      });
+      };
+
+      // Broadcast to all users in the room
+      this.chatGateway.broadcastToRoom(
+        roomId,
+        roomType,
+        'systemMessage',
+        systemMessageData,
+      );
 
       this.logger.log(
         `System message sent to ${roomType} ${roomId}: ${content}`,
       );
-      return message;
+      return systemMessageData;
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -64,7 +152,10 @@ export class RealtimeChatService {
   /**
    * Notify users about new meeting
    */
-  async notifyNewMeeting(groupId: string, meetingData: any) {
+  async notifyNewMeeting(
+    groupId: string,
+    meetingData: MeetingData,
+  ): Promise<void> {
     try {
       const groupMembers = await this.prisma.groupMember.findMany({
         where: { groupId },
@@ -73,11 +164,17 @@ export class RealtimeChatService {
 
       const userIds = groupMembers.map((member) => member.userId);
 
-      this.chatGateway.broadcastToUsers(userIds, 'newMeeting', {
+      const notificationData: NotificationData = {
         groupId,
         meeting: meetingData,
         timestamp: new Date(),
-      });
+      };
+
+      this.chatGateway.broadcastToUsers(
+        userIds,
+        'newMeeting',
+        notificationData,
+      );
 
       this.logger.log(`New meeting notification sent to group ${groupId}`);
     } catch (error) {
@@ -90,7 +187,10 @@ export class RealtimeChatService {
   /**
    * Notify users about meeting start
    */
-  async notifyMeetingStart(meetingId: string, meetingData: any) {
+  async notifyMeetingStart(
+    meetingId: string,
+    meetingData: MeetingData,
+  ): Promise<void> {
     try {
       const meeting = (await this.prisma.meeting.findUnique({
         where: { id: meetingId },
@@ -109,14 +209,20 @@ export class RealtimeChatService {
 
       const userIds = groupMembers.map((member) => member.userId);
 
-      this.chatGateway.broadcastToUsers(userIds, 'meetingStarted', {
+      const notificationData: NotificationData = {
         meetingId,
         meeting: meetingData,
         timestamp: new Date(),
-      });
+      };
+
+      this.chatGateway.broadcastToUsers(
+        userIds,
+        'meetingStarted',
+        notificationData,
+      );
 
       // Send system message to meeting room
-      void this.sendSystemMessage(
+      await this.sendSystemMessage(
         meetingId,
         ChatRoomType.MEETING,
         `Meeting "${meeting.title}" has started`,
@@ -135,7 +241,10 @@ export class RealtimeChatService {
   /**
    * Notify users about meeting end
    */
-  async notifyMeetingEnd(meetingId: string, meetingData: any) {
+  async notifyMeetingEnd(
+    meetingId: string,
+    meetingData: MeetingData,
+  ): Promise<void> {
     try {
       const meeting = (await this.prisma.meeting.findUnique({
         where: { id: meetingId },
@@ -154,14 +263,20 @@ export class RealtimeChatService {
 
       const userIds = groupMembers.map((member) => member.userId);
 
-      this.chatGateway.broadcastToUsers(userIds, 'meetingEnded', {
+      const notificationData: NotificationData = {
         meetingId,
         meeting: meetingData,
         timestamp: new Date(),
-      });
+      };
+
+      this.chatGateway.broadcastToUsers(
+        userIds,
+        'meetingEnded',
+        notificationData,
+      );
 
       // Send system message to meeting room
-      void this.sendSystemMessage(
+      await this.sendSystemMessage(
         meetingId,
         ChatRoomType.MEETING,
         `Meeting "${meeting.title}" has ended. Summary will be available shortly.`,
@@ -180,8 +295,8 @@ export class RealtimeChatService {
    */
   async notifyNewGroupMember(
     groupId: string,
-    newMember: { user: { firstName: string; lastName: string } },
-  ) {
+    newMember: NewGroupMember,
+  ): Promise<void> {
     try {
       const groupMembers = await this.prisma.groupMember.findMany({
         where: { groupId },
@@ -190,14 +305,20 @@ export class RealtimeChatService {
 
       const userIds = groupMembers.map((member) => member.userId);
 
-      this.chatGateway.broadcastToUsers(userIds, 'newGroupMember', {
+      const notificationData: NotificationData = {
         groupId,
         newMember,
         timestamp: new Date(),
-      });
+      };
+
+      this.chatGateway.broadcastToUsers(
+        userIds,
+        'newGroupMember',
+        notificationData,
+      );
 
       // Send system message to group room
-      void this.sendSystemMessage(
+      await this.sendSystemMessage(
         groupId,
         ChatRoomType.GROUP,
         `${newMember.user.firstName} ${newMember.user.lastName} joined the group`,
@@ -214,7 +335,10 @@ export class RealtimeChatService {
   /**
    * Notify users about new resource
    */
-  async notifyNewResource(resourceData: any, topicId: string) {
+  async notifyNewResource(
+    resourceData: ResourceData,
+    topicId: string,
+  ): Promise<void> {
     try {
       // Get users interested in this topic
       const topicUsers = await this.prisma.user.findMany({
@@ -227,11 +351,17 @@ export class RealtimeChatService {
 
       const userIds = topicUsers.map((user) => user.id);
 
-      this.chatGateway.broadcastToUsers(userIds, 'newResource', {
+      const notificationData: NotificationData = {
         resource: resourceData,
         topicId,
         timestamp: new Date(),
-      });
+      };
+
+      this.chatGateway.broadcastToUsers(
+        userIds,
+        'newResource',
+        notificationData,
+      );
 
       this.logger.log(`New resource notification sent for topic ${topicId}`);
     } catch (error) {
@@ -249,15 +379,22 @@ export class RealtimeChatService {
     roomType: ChatRoomType,
     userId: string,
     userName: string,
-  ) {
+  ): void {
     try {
-      this.chatGateway.broadcastToRoom(roomId, roomType, 'userTyping', {
+      const typingData: TypingIndicatorData = {
         userId,
         userName,
         roomId,
         roomType,
         timestamp: new Date(),
-      });
+      };
+
+      this.chatGateway.broadcastToRoom(
+        roomId,
+        roomType,
+        'userTyping',
+        typingData,
+      );
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -273,15 +410,22 @@ export class RealtimeChatService {
     roomType: ChatRoomType,
     userId: string,
     userName: string,
-  ) {
+  ): void {
     try {
-      this.chatGateway.broadcastToRoom(roomId, roomType, 'userStopTyping', {
+      const typingData: TypingIndicatorData = {
         userId,
         userName,
         roomId,
         roomType,
         timestamp: new Date(),
-      });
+      };
+
+      this.chatGateway.broadcastToRoom(
+        roomId,
+        roomType,
+        'userStopTyping',
+        typingData,
+      );
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -295,19 +439,17 @@ export class RealtimeChatService {
    * Get online users in a room
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  getOnlineUsers(roomId: string, roomType: ChatRoomType): Promise<string[]> {
-    return new Promise((resolve) => {
-      try {
-        // This would need to be implemented based on your WebSocket connection tracking
-        // For now, return an empty array
-        resolve([]);
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
-        this.logger.error(`Failed to get online users: ${errorMessage}`);
-        resolve([]);
-      }
-    });
+  getOnlineUsers(_roomId: string, _roomType: ChatRoomType): Promise<string[]> {
+    try {
+      // This would need to be implemented based on your WebSocket connection tracking
+      // For now, return an empty array
+      return Promise.resolve([]);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      this.logger.error(`Failed to get online users: ${errorMessage}`);
+      return Promise.resolve([]);
+    }
   }
 
   /**
@@ -318,15 +460,22 @@ export class RealtimeChatService {
     roomType: ChatRoomType,
     userId: string,
     messageId: string,
-  ) {
+  ): void {
     try {
-      this.chatGateway.broadcastToRoom(roomId, roomType, 'messageRead', {
+      const readReceiptData: ReadReceiptData = {
         userId,
         messageId,
         roomId,
         roomType,
         timestamp: new Date(),
-      });
+      };
+
+      this.chatGateway.broadcastToRoom(
+        roomId,
+        roomType,
+        'messageRead',
+        readReceiptData,
+      );
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -337,7 +486,10 @@ export class RealtimeChatService {
   /**
    * Get room statistics
    */
-  async getRoomStats(roomId: string, roomType: ChatRoomType) {
+  async getRoomStats(
+    roomId: string,
+    roomType: ChatRoomType,
+  ): Promise<RoomStats | null> {
     try {
       const messageCount = await this.prisma.message.count({
         where: this.getRoomReference(roomId, roomType),
@@ -345,13 +497,15 @@ export class RealtimeChatService {
 
       const onlineUsers = await this.getOnlineUsers(roomId, roomType);
 
-      return {
+      const roomStats: RoomStats = {
         roomId,
         roomType,
         messageCount,
         onlineUsersCount: onlineUsers.length,
         timestamp: new Date(),
       };
+
+      return roomStats;
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
