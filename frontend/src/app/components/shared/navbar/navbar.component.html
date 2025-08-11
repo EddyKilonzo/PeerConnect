@@ -1,0 +1,53 @@
+<nav class="navbar">
+  <div class="navbar-container">
+    <!-- Logo/Brand -->
+    <div class="navbar-brand">
+      <a routerLink="/" class="brand-link">
+        <span class="brand-text">PeerConnect</span>
+      </a>
+    </div>
+
+    <!-- Desktop Navigation -->
+    <div class="navbar-nav desktop-nav">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link">Home</a>
+      <a routerLink="/groups" routerLinkActive="active" class="nav-link">Groups</a>
+      <a routerLink="/meetings" routerLinkActive="active" class="nav-link">Meetings</a>
+      <a routerLink="/resources" routerLinkActive="active" class="nav-link">Resources</a>
+      <a routerLink="/chat" routerLinkActive="active" class="nav-link">Chat</a>
+    </div>
+
+    <!-- User Menu -->
+    <div class="navbar-user">
+      <div class="user-menu" (click)="toggleUserMenu()">
+        <div class="user-avatar">
+          <span class="avatar-text">U</span>
+        </div>
+        <span class="user-name">User</span>
+        <i class="dropdown-icon">▼</i>
+      </div>
+      
+      <div class="user-dropdown" [class.show]="isUserMenuOpen">
+        <a routerLink="/profile" class="dropdown-item">Profile</a>
+        <a routerLink="/settings" class="dropdown-item">Settings</a>
+        <div class="dropdown-divider"></div>
+        <a routerLink="/logout" class="dropdown-item">Logout</a>
+      </div>
+    </div>
+
+    <!-- Mobile Menu Button -->
+    <button class="mobile-menu-btn" (click)="toggleMenu()" [class.active]="isMenuOpen">
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+    </button>
+  </div>
+
+  <!-- Mobile Navigation -->
+  <div class="mobile-nav" [class.show]="isMenuOpen">
+    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="mobile-nav-link" (click)="closeMenus()">Home</a>
+    <a routerLink="/groups" routerLinkActive="active" class="mobile-nav-link" (click)="closeMenus()">Groups</a>
+    <a routerLink="/meetings" routerLinkActive="active" class="mobile-nav-link" (click)="closeMenus()">Meetings</a>
+    <a routerLink="/resources" routerLinkActive="active" class="mobile-nav-link" (click)="closeMenus()">Resources</a>
+    <a routerLink="/chat" routerLinkActive="active" class="mobile-nav-link" (click)="closeMenus()">Chat</a>
+  </div>
+</nav>
