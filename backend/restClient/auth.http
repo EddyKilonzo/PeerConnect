@@ -1,0 +1,212 @@
+### PeerConnect Authentication API Tests
+### REST Client Extension for VS Code
+
+# Base URL - Update this if your server runs on a different port
+@baseUrl = http://localhost:3000
+@authUrl = {{baseUrl}}/auth
+
+### ========================================
+### USER REGISTRATION ENDPOINTS
+### ========================================
+
+### 1. Full User Registration
+POST {{authUrl}}/register
+Content-Type: application/json
+
+{
+  "email": "eddboy188@gmail.com",
+  "password": "password123",
+  "firstName": "Eddy",
+  "lastName": "Max",
+  "bio": "A passionate developer",
+  "profilePicture": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+  "role": "USER"
+}
+
+### 2.  User Registration
+POST {{authUrl}}/register
+Content-Type: application/json
+
+{
+  "email": "jane.smith@example.com",
+  "password": "password123",
+  "firstName": "Jane",
+  "lastName": "Smith",
+  "profilePicture": "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face"
+}
+
+### 3. Listener Role Registration
+POST {{authUrl}}/register
+Content-Type: application/json
+
+{
+  "email": "alice.johnson@example.com",
+  "password": "password123",
+  "firstName": "Alice",
+  "lastName": "Johnson",
+  "bio": "Professional listener and counselor",
+  "profilePicture": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
+  "role": "LISTENER"
+}
+
+### 4. Admin Role Registration
+POST {{authUrl}}/register
+Content-Type: application/json
+
+{
+  "email": "admin@peerconnect.com",
+  "password": "password123",
+  "firstName": "Admin",
+  "lastName": "User",
+  "bio": "System administrator",
+  "profilePicture": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
+  "role": "ADMIN"
+}
+
+### ========================================
+### USER LOGIN ENDPOINTS
+### ========================================
+
+### 5. User Login
+POST {{authUrl}}/login
+Content-Type: application/json
+
+{
+  "email": "eddboy188@gmail.com",
+  "password": "password123"
+}
+
+### 6. Minimal User Login
+POST {{authUrl}}/login
+Content-Type: application/json
+
+{
+  "email": "jane.smith@example.com",
+  "password": "password123"
+}
+
+### 7. Listener Login
+POST {{authUrl}}/login
+Content-Type: application/json
+
+{
+  "email": "alice.johnson@example.com",
+  "password": "password123"
+}
+
+### 8. Admin Login
+POST {{authUrl}}/login
+Content-Type: application/json
+
+{
+  "email": "admin@peerconnect.com",
+  "password": "password123"
+}
+
+### ========================================
+### EMAIL VERIFICATION ENDPOINTS
+### ========================================
+
+### 9. Verify Email
+GET {{authUrl}}/verify-email?email=eddboy188@gmail.com&code=852276
+
+### 10. Resend Verification Code
+POST {{authUrl}}/resend-verification
+Content-Type: application/json
+
+{
+  "email": "eddboy188@gmail.com"
+}
+
+### ========================================
+### TOKEN MANAGEMENT ENDPOINTS
+### ========================================
+
+### 11. Refresh Access Token
+POST {{authUrl}}/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "YOUR_REFRESH_TOKEN_HERE"
+}
+
+
+
+### ========================================
+### VALIDATION TESTING ENDPOINTS
+### ========================================
+
+### 12. Invalid Email Format
+POST {{authUrl}}/register
+Content-Type: application/json
+
+{
+  "email": "invalid-email-format",
+  "password": "password123",
+  "firstName": "Invalid",
+  "lastName": "Email"
+}
+
+### 13. Short Password (Validation Error)
+POST {{authUrl}}/register
+Content-Type: application/json
+
+{
+  "email": "shortpass@example.com",
+  "password": "123",
+  "firstName": "Short",
+  "lastName": "Password"
+}
+
+### 14. Missing Required Fields
+POST {{authUrl}}/register
+Content-Type: application/json
+
+{
+  "email": "missing@example.com",
+  "password": "password123"
+}
+
+### 15. Invalid Role
+POST {{authUrl}}/register
+Content-Type: application/json
+
+{
+  "email": "invalidrole@example.com",
+  "password": "password123",
+  "firstName": "Invalid",
+  "lastName": "Role",
+  "role": "INVALID_ROLE"
+}
+
+### ========================================
+### AUTHENTICATION ERROR TESTING
+### ========================================
+
+### 16. Login with Wrong Password
+POST {{authUrl}}/login
+Content-Type: application/json
+
+{
+  "email": "john.doe@example.com",
+  "password": "wrongpassword"
+}
+
+### 17. Login with Non-existent User
+POST {{authUrl}}/login
+Content-Type: application/json
+
+{
+  "email": "nonexistent@example.com",
+  "password": "password123"
+}
+
+### 18. Login with Empty Fields
+POST {{authUrl}}/login
+Content-Type: application/json
+
+{
+  "email": "",
+  "password": ""
+}
+

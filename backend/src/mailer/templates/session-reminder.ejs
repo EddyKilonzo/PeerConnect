@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session Reminder - <%= appName %></title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 300;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .greeting {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        .reminder-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .reminder-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .reminder-message {
+            font-size: 16px;
+            color: #555;
+            line-height: 1.5;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 600;
+            margin: 20px 0;
+            transition: transform 0.2s;
+        }
+        .cta-button:hover {
+            transform: translateY(-2px);
+        }
+        .footer {
+            background: #f8f9fa;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+        }
+        .footer p {
+            margin: 5px 0;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .support-email {
+            color: #667eea;
+            text-decoration: none;
+        }
+        .support-email:hover {
+            text-decoration: underline;
+        }
+        .icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="icon">⏰</div>
+            <h1><%= appName %></h1>
+            <p>Session Reminder</p>
+        </div>
+        
+        <div class="content">
+            <div class="greeting">Hello <%= firstName %>!</div>
+            
+            <div class="reminder-box">
+                <div class="reminder-title"><%= title %></div>
+                <div class="reminder-message"><%= message %></div>
+            </div>
+            
+            <p style="font-size: 16px; color: #555; margin: 20px 0;">
+                Please make sure you're prepared for your session. You can review your topic materials 
+                and prepare any questions you'd like to discuss.
+            </p>
+            
+            <div style="text-align: center;">
+                <a href="#" class="cta-button">Join Session</a>
+            </div>
+            
+            <p style="font-size: 14px; color: #6c757d; margin-top: 30px; text-align: center;">
+                If you need to reschedule or have any questions, please contact your listener or our support team.
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p>Need help? Contact our support team at 
+                <a href="mailto:<%= supportEmail %>" class="support-email"><%= supportEmail %></a>
+            </p>
+            <p>&copy; <%= new Date().getFullYear() %> <%= appName %>. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

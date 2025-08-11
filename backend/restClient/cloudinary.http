@@ -1,0 +1,199 @@
+### PeerConnect Cloudinary API Tests
+### REST Client Extension for VS Code
+
+# Base URL - Update this if your server runs on a different port
+@baseUrl = http://localhost:3000
+@cloudinaryUrl = {{baseUrl}}/cloudinary
+
+### ========================================
+### FILE UPLOAD ENDPOINTS
+### ========================================
+
+### 1. Upload Single File (Multipart Form)
+POST {{cloudinaryUrl}}/upload/single
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="profile-picture.jpg"
+Content-Type: image/jpeg
+
+< ./test-images/profile-picture.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="folder"
+
+profile-pictures
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 2. Upload Multiple Files (Multipart Form)
+POST {{cloudinaryUrl}}/upload/multiple
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="files"; filename="image1.jpg"
+Content-Type: image/jpeg
+
+< ./test-images/image1.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="files"; filename="image2.jpg"
+Content-Type: image/jpeg
+
+< ./test-images/image2.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="folder"
+
+gallery
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 3. Upload Base64 File
+POST {{cloudinaryUrl}}/upload/base64
+Content-Type: application/json
+
+{
+  "base64String": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=",
+  "folder": "profile-pictures"
+}
+
+### 4. Upload to Specific Folder
+POST {{cloudinaryUrl}}/upload/single
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="document.pdf"
+Content-Type: application/pdf
+
+< ./test-documents/document.pdf
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="folder"
+
+documents
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### ========================================
+### FILE MANAGEMENT ENDPOINTS
+### ========================================
+
+### 5. Get File Information
+GET {{cloudinaryUrl}}/info/peerconnect/profile-pictures/profile-picture
+
+### 6. Delete File
+DELETE {{cloudinaryUrl}}/delete/peerconnect/profile-pictures/profile-picture
+Content-Type: application/json
+
+{
+  "resourceType": "image"
+}
+
+### 7. Delete Video File
+DELETE {{cloudinaryUrl}}/delete/peerconnect/videos/sample-video
+Content-Type: application/json
+
+{
+  "resourceType": "video"
+}
+
+### ========================================
+### ADVANCED FEATURES
+### ========================================
+
+### 8. Generate Upload Signature (for client-side uploads)
+POST {{cloudinaryUrl}}/signature
+Content-Type: application/json
+
+{
+  "params": {
+    "folder": "profile-pictures",
+    "transformation": {
+      "width": 300,
+      "height": 300,
+      "crop": "fill",
+      "gravity": "face"
+    }
+  }
+}
+
+### 9. Transform Image URL
+POST {{cloudinaryUrl}}/transform/peerconnect/profile-pictures/profile-picture
+Content-Type: application/json
+
+{
+  "transformation": {
+    "width": 150,
+    "height": 150,
+    "crop": "thumb",
+    "gravity": "face",
+    "radius": 20,
+    "effect": "brightness:10"
+  }
+}
+
+### 10. Transform Image with Multiple Effects
+POST {{cloudinaryUrl}}/transform/peerconnect/gallery/image1
+Content-Type: application/json
+
+{
+  "transformation": {
+    "width": 800,
+    "height": 600,
+    "crop": "fill",
+    "gravity": "auto",
+    "quality": "auto:good",
+    "format": "webp",
+    "effect": "contrast:20,saturation:30"
+  }
+}
+
+### ========================================
+### ERROR TESTING ENDPOINTS
+### ========================================
+
+### 11. Upload Without File (Error)
+POST {{cloudinaryUrl}}/upload/single
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="folder"
+
+profile-pictures
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 12. Upload Base64 Without String (Error)
+POST {{cloudinaryUrl}}/upload/base64
+Content-Type: application/json
+
+{
+  "folder": "profile-pictures"
+}
+
+### 13. Delete Non-existent File (Error)
+DELETE {{cloudinaryUrl}}/delete/non-existent-file
+Content-Type: application/json
+
+{
+  "resourceType": "image"
+}
+
+### ========================================
+### NOTES AND CONFIGURATION
+### ========================================
+
+# Environment Variables Required:
+# CLOUDINARY_CLOUD_NAME=your_cloud_name
+# CLOUDINARY_API_KEY=your_api_key
+# CLOUDINARY_API_SECRET=your_api_secret
+
+# File Size Limits:
+# - Single file: 10MB max
+# - Supported formats: jpg, jpeg, png, gif, webp
+
+# Folder Structure:
+# - profile-pictures: For user profile images
+# - gallery: For general image uploads
+# - documents: For PDF and other documents
+# - videos: For video content
+
+# Common Transformations:
+# - crop: fill, thumb, scale, fit
+# - gravity: face, auto, center, north, south, east, west
+# - quality: auto, auto:good, auto:best, 80, 90
+# - format: jpg, png, webp, gif
+# - effect: brightness, contrast, saturation, blur, sharpen
